@@ -18,12 +18,12 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="host.cpp">
+    <ClCompile Include="gamepad.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="host.h">
+    <ClInclude Include="gamepad.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

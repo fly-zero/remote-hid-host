@@ -1,6 +1,7 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+// ReSharper disable once CppUnusedIncludeDirective
 #include <Windows.h>
 
 #include <memory>
@@ -11,7 +12,7 @@
 namespace remote_hid
 {
 
-class host
+class gamepad
 {
     struct vigem_deleter
     {
@@ -25,17 +26,17 @@ class host
     using vigem_target_vector = std::vector<vigem_target>;
 
 public:
-    host();
+    gamepad();
 
-    ~host();
+    ~gamepad();
 
-    host(host&& other) noexcept;
+    gamepad(gamepad&& other) noexcept;
 
-    host& operator=(host&& other) noexcept;
+    gamepad& operator=(gamepad&& other) noexcept;
 
-    host(host const&) = delete;
+    gamepad(gamepad const&) = delete;
 
-    void operator=(host const&) = delete;
+    void operator=(gamepad const&) = delete;
 
     int add_controller();
 
@@ -46,23 +47,23 @@ private:
     vigem_target_vector targets_{};  ///< ViGEm targets
 };
 
-inline void host::vigem_deleter::operator()(PVIGEM_CLIENT client) const
+inline void gamepad::vigem_deleter::operator()(PVIGEM_CLIENT client) const
 {
     vigem_free(client);
 }
 
-inline void host::vigem_deleter::operator()(PVIGEM_TARGET target) const
+inline void gamepad::vigem_deleter::operator()(PVIGEM_TARGET target) const
 {
     vigem_target_free(target);
 }
 
-inline host::host(host&& other) noexcept
+inline gamepad::gamepad(gamepad&& other) noexcept
     : client_(std::move(other.client_))
     , targets_(std::move(other.targets_))
 {
 }
 
-inline host& host::operator=(host&& other) noexcept
+inline gamepad& gamepad::operator=(gamepad&& other) noexcept
 {
     if (this != &other)
     {
@@ -73,7 +74,7 @@ inline host& host::operator=(host&& other) noexcept
     return *this;
 }
 
-inline void host::update_controller(int id, XUSB_REPORT const& report) const
+inline void gamepad::update_controller(int id, XUSB_REPORT const& report) const
 {
     auto const target = targets_.at(id).get();
     vigem_target_x360_update(client_.get(), target, report);

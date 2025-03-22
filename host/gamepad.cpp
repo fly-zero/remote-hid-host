@@ -1,11 +1,11 @@
-#include "host.h"
+#include "gamepad.h"
 
 #include <stdexcept>
 
 namespace remote_hid
 {
 
-host::host()
+gamepad::gamepad()
     : client_(vigem_alloc())
 {
     // Allocate a ViGEm client
@@ -23,7 +23,7 @@ host::host()
     }
 }
 
-host::~host()
+gamepad::~gamepad()
 {
     // Remove all targets
     for (auto const& target : targets_)
@@ -35,7 +35,7 @@ host::~host()
     vigem_disconnect(client_.get());
 }
 
-int host::add_controller()
+int gamepad::add_controller()
 {
     // Allocate aa x360 target
     vigem_target target(vigem_target_x360_alloc());

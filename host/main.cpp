@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include "host.h"
+#include "gamepad.h"
 
 
 int main()
@@ -20,9 +20,9 @@ int main()
         return EXIT_FAILURE;
     }
 
-    // Create a host and add a controller
-    remote_hid::host host;
-    auto const id = host.add_controller();
+    // Create a gamepad and add a controller
+    remote_hid::gamepad gamepad;
+    auto const id = gamepad.add_controller();
 
     while (s_running)  // NOLINT(bugprone-infinite-loop)
     {
@@ -38,6 +38,6 @@ int main()
                  >> report.sThumbRY;
 
         // Update the target with the report
-        host.update_controller(id, report);
+        gamepad.update_controller(id, report);
     }
 }
