@@ -1,22 +1,31 @@
 #include "communication.h"
 
+#include <memory>
 #include <WS2tcpip.h>
 
 #include <string>
+#include <system_error>
 
 #include "common.h"
 
 namespace remote_hid
 {
 
-const char* str_wsa_error(int const err)
+struct communication::init
 {
-    // format error string
-    static char buffer[4096];
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-        nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, _countof(buffer), nullptr);
-    return buffer;
-}
+    init();
+
+    ~init();
+
+    init(const init&) = delete;
+    void operator=(const init&) = delete;
+    init(init&&) = delete;
+    void operator=(init&&) = delete;
+
+    static init s_init;
+};
+
+communication::init communication::init::s_init;
 
 std::tuple<std::string_view, std::string_view> split_string(std::string_view str, char delim)
 {
@@ -31,19 +40,11 @@ std::tuple<std::string_view, std::string_view> split_string(std::string_view str
 
 communication::communication(std::string_view addr)
 {
-    // Initialize Winsock
-    WSADATA wsaData;
-    auto const result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (result != 0)
-    {
-        throw exception::runtime_error("WSAStartup failed: %s", str_wsa_error(result));
-    }
-
     // Create a socket
     auto const sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock == INVALID_SOCKET)
     {
-        throw exception::runtime_error("socket failed: %s", str_wsa_error(result));
+        throw std::system_error(WSAGetLastError(), std::system_category(), "Failed to create socket");
     }
 
     // spit address
@@ -51,21 +52,23 @@ communication::communication(std::string_view addr)
     if (host.empty() || port.empty())
     {
         closesocket(sock);
-        throw exception::invalid_argument("Invalid address");
+        throw exception::invalid_argument("Invalid address: '%.*s'", static_cast<int>(addr.size()), addr.data());
     }
 
     // copy host to null-terminated string
-    auto const host_str = static_cast<char *>(_malloca(host.size() + 1));
-    *std::copy(host.begin(), host.end(), host_str) = '\0';
+    auto const host_deleter = [](char* p) { _freea(p); };
+    std::unique_ptr<char, decltype(host_deleter)> const host_str{ static_cast<char*>(_malloca(host.size() + 1)), host_deleter };
+    *std::copy(host.begin(), host.end(), host_str.get()) = '\0';
 
     // setup address
     sockaddr_in tmp{};
     tmp.sin_family = AF_INET;
     tmp.sin_port = htons(static_cast<uint16_t>(std::stoi(port.data())));
-    if (inet_pton(AF_INET, host_str, &tmp.sin_addr) != 1)
+    if (inet_pton(AF_INET, host_str.get(), &tmp.sin_addr) != 1)
     {
+        auto const err = WSAGetLastError();
         closesocket(sock);
-        throw exception::invalid_argument("Invalid address");
+        throw std::system_error(err, std::system_category(), "Invalid address");
     }
 
     // bind socket
@@ -73,7 +76,7 @@ communication::communication(std::string_view addr)
     {
         auto const err = WSAGetLastError();
         closesocket(sock);
-        throw exception::runtime_error("bind failed: %s", str_wsa_error(err));
+        throw std::system_error(err, std::system_category(), "bind failed");
     }
 
     // listen
@@ -81,7 +84,7 @@ communication::communication(std::string_view addr)
     {
         auto const err = WSAGetLastError();
         closesocket(sock);
-        throw exception::runtime_error("listen failed: %s", str_wsa_error(err));
+        throw std::system_error(err, std::system_category(), "listen failed");
     }
 
     // setup member
@@ -91,8 +94,27 @@ communication::communication(std::string_view addr)
 communication::~communication()
 {
     // cleanup
-    closesocket(sock_);
+    if (sock_ != INVALID_SOCKET)
+    {
+        closesocket(sock_);
+    }
+}
+
+inline communication::init::init()
+{
+    // Initialize Winsock
+    WSADATA wsa_data;
+    if (auto const err = WSAStartup(MAKEWORD(2, 2), &wsa_data); err != 0)
+    {
+        throw std::system_error(err, std::system_category(), "WSAStartup failed");
+    }
+}
+
+inline communication::init::~init()
+{
     WSACleanup();
 }
+
+
 
 }
