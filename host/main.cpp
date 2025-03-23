@@ -7,8 +7,8 @@
 
 #include <iostream>
 
+#include "communication.h"
 #include "gamepad.h"
-
 
 int main()
 {

@@ -21,9 +21,21 @@
     <ClCompile Include="gamepad.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="communication.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gamepad.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="communication.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
