@@ -75,10 +75,21 @@ std::tuple<std::string_view, std::string_view> split_string(std::string_view str
     return { str.substr(0, pos), str.substr(pos + 1) };
 }
 
-server::server(event_dispatch& dispatcher, std::string_view addr)
-    : io_listener{ listen(addr) }
-    , dispatcher_{ dispatcher }
+server::server(event_dispatch &dispatcher, std::string_view addr)
+    : io_listener{listen(addr)}, dispatcher_{dispatcher}
 {
+    // get the AcceptEx function
+    s_accept_ex = load_accept_ex(get_socket());
+    assert(s_accept_ex);
+
+    // register the io listener
+    dispatcher_.register_listener(static_cast<io_listener &>(*this));
+
+    // register the loop loop listener
+    dispatcher_.register_listener(static_cast<loop_listener &>(*this));
+
+    // start coroutine
+    resume();
 }
 
 void server::on_io_complete(DWORD bytes_transferred)
@@ -139,6 +150,14 @@ inline SOCKET server::listen(std::string_view addr)
     return sock;
 }
 
+void server::on_loop()
+{
+    while (!closed_list_.empty())
+    {
+        closed_list_.pop_front_and_dispose([](const connection *conn) { delete conn; });
+    }
+}
+
 SOCKET server::accept() const
 {
     // create a client socket
@@ -155,7 +174,7 @@ SOCKET server::accept() const
     if (!s_accept_ex(get_socket(),
                      client_sock,
                      buff,
-                     sizeof buff - (sizeof(sockaddr_in) + 16) * 2,
+                     0,
                      sizeof(sockaddr_in) + 16,
                      sizeof(sockaddr_in) + 16,
                      &bytes,
@@ -176,20 +195,11 @@ SOCKET server::accept() const
 
 void server::run()
 {
-    // get the AcceptEx function
-    s_accept_ex = load_accept_ex(get_socket());
-    assert(s_accept_ex);
-
-    // register the socket to the dispatcher
-    dispatcher_.register_listener(*this);
-
     do
     {
         auto const client_sock = accept();
-        auto const conn = new connection{ client_sock };
-        conn_list_.push_back(*conn);
-
-        // TODO: register client_sock to event_dispatch
+        auto const conn        = new connection{*this, client_sock};
+        active_list_.push_back(*conn);
     } while (true);
 }
 

@@ -11,7 +11,7 @@
 namespace remote_hid
 {
 
-class server final : public io_listener, public coroutine_base
+class server final : public io_listener, public loop_listener, public coroutine_base
 {
     struct init;
 
@@ -34,8 +34,14 @@ public:
     server(server const&) = delete;
     server& operator=(server const&) = delete;
 
+    event_dispatch &get_event_dispatch() const;
+
+    void close(connection &conn);
+
 protected:
     void on_io_complete(DWORD bytes_transferred) override;
+
+    void on_loop() override;
 
     static SOCKET listen(std::string_view addr);
 
@@ -44,8 +50,16 @@ protected:
     void run() override;
 
 private:
-    event_dispatch &dispatcher_;                                       ///< event dispatcher
-    connection_list conn_list_{};                                      ///< connection list
+    event_dispatch &dispatcher_;     ///< event dispatcher
+    connection_list active_list_{};  ///< active connection list
+    connection_list closed_list_{};  ///< closed connection list
 };
 
+inline event_dispatch &server::get_event_dispatch() const { return dispatcher_; }
+
+inline void server::close(connection &conn)
+{
+    closed_list_.splice(closed_list_.end(), active_list_, active_list_.iterator_to(conn));
 }
+
+}  // namespace remote_hid

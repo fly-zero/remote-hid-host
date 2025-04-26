@@ -4,19 +4,20 @@
 
 #include <boost/intrusive/list_hook.hpp>
 
+#include "coroutine.h"
 #include "event_dispatch.h"
 
 namespace remote_hid
 {
 
-class connection final : public io_listener
+class connection final : public io_listener, public coroutine_base
 {
     using list_hook = boost::intrusive::list_member_hook<>;
 
     friend class server;
 
 public:
-    explicit connection(SOCKET sock);
+    connection(server &server, SOCKET sock);
 
     ~connection() override = default;
 
@@ -28,14 +29,18 @@ public:
 protected:
     void on_io_complete(DWORD bytes_transferred) override;
 
+    void run() override;
+
+    long recv(char *buffer, unsigned size) const;
+
 private:
     list_hook list_hook_{};
+    server   &server_;
 };
 
-inline connection::connection(SOCKET const sock)
-    : io_listener{ sock }
+inline connection::connection(server &server, SOCKET sock) : io_listener{sock}, server_{server}
 {
+    resume();
 }
 
-}
-
+}  // namespace remote_hid
