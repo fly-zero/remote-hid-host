@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="connection.h" />
+    <ClInclude Include="coroutine.h" />
     <ClInclude Include="io_listener.h" />
     <ClInclude Include="loop_listener.h" />
     <ClInclude Include="server.h" />

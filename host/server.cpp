@@ -174,11 +174,8 @@ SOCKET server::accept() const
     return client_sock;
 }
 
-void server::run(co_pull& source)
+void server::run()
 {
-    // setup coroutine source
-    source_ = &source;
-
     // get the AcceptEx function
     s_accept_ex = load_accept_ex(get_socket());
     assert(s_accept_ex);

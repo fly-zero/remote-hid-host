@@ -2,21 +2,19 @@
 
 #include <WinSock2.h>
 
-#include <boost/coroutine2/coroutine.hpp>
 #include <boost/intrusive/list.hpp>
 
 #include "connection.h"
+#include "coroutine.h"
 #include "event_dispatch.h"
 
 namespace remote_hid
 {
 
-class server final : public io_listener
+class server final : public io_listener, public coroutine_base
 {
     struct init;
 
-    using co_push         = boost::coroutines2::coroutine<void>::pull_type;
-    using co_pull         = boost::coroutines2::coroutine<void>::push_type;
     using connection_list = boost::intrusive::list
                                 < connection
                                 , boost::intrusive::member_hook
@@ -43,27 +41,11 @@ protected:
 
     [[nodiscard]] SOCKET accept() const;
 
-    void run(co_pull &source);
-
-    void yield() const;
-
-    void resume();
+    void run() override;
 
 private:
     event_dispatch &dispatcher_;                                       ///< event dispatcher
-    co_push         sink_{ [this](co_pull &source) {run(source); } };  ///< coroutine sink
-    co_pull        *source_{ nullptr };                                ///< coroutine source
     connection_list conn_list_{};                                      ///< connection list
 };
-
-inline void server::yield() const
-{
-    (*source_)();
-}
-
-inline void server::resume()
-{
-    sink_();
-}
 
 }
