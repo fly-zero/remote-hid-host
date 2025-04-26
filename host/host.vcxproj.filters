@@ -21,7 +21,7 @@
     <ClCompile Include="gamepad.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="communication.cpp">
+    <ClCompile Include="server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common.h">
@@ -33,15 +33,33 @@
     <ClCompile Include="event_dispatch.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="connection.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="io_listener.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gamepad.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="communication.h">
+    <ClInclude Include="server.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="event_dispatch.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="connection.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="io_listener.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="loop_listener.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="timeout_listener.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

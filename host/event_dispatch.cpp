@@ -56,7 +56,7 @@ void event_dispatch::run()
         if (auto const ret = GetQueuedCompletionStatus(iocp_, &bytes_transferred, &key, &overlapped, 50); ret)
         {
             auto const listener = reinterpret_cast<io_listener*>(key);  // NOLINT(performance-no-int-to-ptr)
-            listener->on_io_complete(bytes_transferred, key);
+            listener->on_io_complete(bytes_transferred);
         }
         else if (overlapped)
         {

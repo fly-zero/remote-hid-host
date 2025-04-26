@@ -9,69 +9,12 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include "io_listener.h"
+#include "loop_listener.h"
+#include "timeout_listener.h"
+
 namespace remote_hid
 {
-
-class io_listener
-{
-    friend class event_dispatch;
-
-public:
-    io_listener(const io_listener&) = delete;
-    void operator=(const io_listener&) = delete;
-    io_listener(io_listener&&) = delete;
-    void operator=(io_listener&&) = delete;
-
-protected:
-    virtual ~io_listener() = default;
-    virtual void on_io_complete(DWORD bytes_transferred, ULONG_PTR key) = 0;
-
-private:
-    HANDLE handle_{ INVALID_HANDLE_VALUE };
-};
-
-class loop_listener
-{
-    friend class event_dispatch;
-
-    using list_hook_t = boost::intrusive::list_member_hook<>;
-
-public:
-    loop_listener() = default;
-    virtual ~loop_listener() = default;
-    loop_listener(const loop_listener&) = delete;
-    void operator=(const loop_listener&) = delete;
-    loop_listener(loop_listener&&) = delete;
-    void operator=(loop_listener&&) = delete;
-
-protected:
-    virtual void on_loop() = 0;
-
-private:
-    list_hook_t list_hook_{};
-};
-
-class timeout_listener
-{
-    friend class event_dispatch;
-
-    using duration_t = std::chrono::steady_clock::duration;
-    using time_point_t = std::chrono::steady_clock::time_point;
-
-public:
-    timeout_listener() = default;
-    virtual ~timeout_listener() = default;
-    timeout_listener(const timeout_listener&) = delete;
-    void operator=(const timeout_listener&) = delete;
-    timeout_listener(timeout_listener&&) = delete;
-    void operator=(timeout_listener&&) = delete;
-
-protected:
-    virtual void on_timeout(time_point_t now) = 0;
-
-private:
-    duration_t interval_{};  ///< timeout interval
-};
 
 class event_dispatch
 {
@@ -88,7 +31,7 @@ protected:
         time_point_t      deadline_{};
     };
 
-    using loop_listener_list_t = boost::intrusive::list
+    using loop_listener_list = boost::intrusive::list
                                     < loop_listener
                                     , boost::intrusive::member_hook
                                         < loop_listener
@@ -98,7 +41,7 @@ protected:
                                     , boost::intrusive::constant_time_size<false>
                                     >;
 
-    using timeout_listener_queue_t = std::priority_queue
+    using timeout_listener_queue = std::priority_queue
                                         < timeout_listener_entry
                                         , std::vector<timeout_listener_entry>
                                         , std::greater<>
@@ -131,10 +74,10 @@ protected:
     void on_timeout(time_point_t now);
 
 private:
-    bool                     running_{ false };              ///< indicates if the event dispatch is running
-    HANDLE                   iocp_{ INVALID_HANDLE_VALUE };  ///< I/O completion port handle
-    loop_listener_list_t     loop_listener_list_{};          ///< list of loop listeners
-    timeout_listener_queue_t timeout_listeners_queue_{};     ///< priority queue of timeout listeners
+    bool                   running_{ false };              ///< indicates if the event dispatch is running
+    HANDLE                 iocp_{ INVALID_HANDLE_VALUE };  ///< I/O completion port handle
+    loop_listener_list     loop_listener_list_{};          ///< list of loop listeners
+    timeout_listener_queue timeout_listeners_queue_{};     ///< priority queue of timeout listeners
 };
 
 inline event_dispatch::timeout_listener_entry::timeout_listener_entry(
@@ -157,7 +100,7 @@ inline event_dispatch::event_dispatch(event_dispatch&& other) noexcept
 
 inline bool event_dispatch::register_listener(io_listener& listener) const
 {
-    auto const ret = CreateIoCompletionPort(listener.handle_, iocp_, reinterpret_cast<ULONG_PTR>(&listener), 0);
+    auto const ret = CreateIoCompletionPort(listener.get_handle(), iocp_, reinterpret_cast<ULONG_PTR>(&listener), 0);
     return ret == iocp_;
 }
 

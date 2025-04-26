@@ -7,11 +7,21 @@
 
 #include <iostream>
 
-#include "communication.h"
+#include "server.h"
+#include "event_dispatch.h"
 #include "gamepad.h"
+
+inline void test()
+{
+    remote_hid::event_dispatch ed;
+    remote_hid::server svr{ ed, "0.0.0.0:7788" };
+    ed.run();
+}
 
 int main()
 {
+    test();
+
     // Set a console control handler to stop the application
     static bool s_running = true;
     if (!SetConsoleCtrlHandler([](DWORD) { s_running = false; return TRUE; }, TRUE))
