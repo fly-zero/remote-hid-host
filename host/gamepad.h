@@ -30,54 +30,50 @@ public:
 
     ~gamepad();
 
-    gamepad(gamepad&& other) noexcept;
+    gamepad(gamepad &&other) noexcept;
 
-    gamepad& operator=(gamepad&& other) noexcept;
+    gamepad &operator=(gamepad &&other) noexcept;
 
-    gamepad(gamepad const&) = delete;
+    gamepad(gamepad const &) = delete;
 
-    void operator=(gamepad const&) = delete;
+    void operator=(gamepad const &) = delete;
 
     int add_controller();
 
-    void update_controller(int id, XUSB_REPORT const& report) const;
+    void update_controller(int id, XUSB_REPORT const &report) const;
 
 private:
     vigem_client        client_{};   ///< ViGEm client
     vigem_target_vector targets_{};  ///< ViGEm targets
 };
 
-inline void gamepad::vigem_deleter::operator()(PVIGEM_CLIENT client) const
-{
-    vigem_free(client);
-}
+inline void gamepad::vigem_deleter::operator()(PVIGEM_CLIENT client) const { vigem_free(client); }
 
 inline void gamepad::vigem_deleter::operator()(PVIGEM_TARGET target) const
 {
     vigem_target_free(target);
 }
 
-inline gamepad::gamepad(gamepad&& other) noexcept
-    : client_(std::move(other.client_))
-    , targets_(std::move(other.targets_))
+inline gamepad::gamepad(gamepad &&other) noexcept
+    : client_(std::move(other.client_)), targets_(std::move(other.targets_))
 {
 }
 
-inline gamepad& gamepad::operator=(gamepad&& other) noexcept
+inline gamepad &gamepad::operator=(gamepad &&other) noexcept
 {
     if (this != &other)
     {
-        client_ = std::move(other.client_);
+        client_  = std::move(other.client_);
         targets_ = std::move(other.targets_);
     }
 
     return *this;
 }
 
-inline void gamepad::update_controller(int id, XUSB_REPORT const& report) const
+inline void gamepad::update_controller(int id, XUSB_REPORT const &report) const
 {
     auto const target = targets_.at(id).get();
     vigem_target_x360_update(client_.get(), target, report);
 }
 
-}
+}  // namespace remote_hid

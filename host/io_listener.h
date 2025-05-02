@@ -21,10 +21,10 @@ public:
 
     virtual ~io_listener();
 
-    io_listener(const io_listener&) = delete;
-    void operator=(const io_listener&) = delete;
-    io_listener(io_listener&&) = delete;
-    void operator=(io_listener&&) = delete;
+    io_listener(const io_listener &)    = delete;
+    void operator=(const io_listener &) = delete;
+    io_listener(io_listener &&)         = delete;
+    void operator=(io_listener &&)      = delete;
 
     HANDLE get_handle() const;
 
@@ -34,21 +34,16 @@ protected:
     virtual void on_io_complete(DWORD bytes_transferred) = 0;
 
 private:
-    handle_type type_{ handle_type::null };
-    uintptr_t   handle_{ ~0UL };
+    handle_type type_{handle_type::null};
+    uintptr_t   handle_{~0UL};
 };
 
 inline io_listener::io_listener(HANDLE const handle)
-    : type_{ handle_type::handle }
-    , handle_{ reinterpret_cast<uintptr_t>(handle) }
+    : type_{handle_type::handle}, handle_{reinterpret_cast<uintptr_t>(handle)}
 {
 }
 
-inline io_listener::io_listener(SOCKET const sock)
-    : type_{ handle_type::socket }
-    , handle_{ sock }
-{
-}
+inline io_listener::io_listener(SOCKET const sock) : type_{handle_type::socket}, handle_{sock} {}
 
 inline HANDLE io_listener::get_handle() const
 {
@@ -62,5 +57,4 @@ inline SOCKET io_listener::get_socket() const
     return handle_;
 }
 
-
-}
+}  // namespace remote_hid

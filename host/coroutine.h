@@ -11,18 +11,18 @@ class coroutine_base
     using co_pull = boost::coroutines2::coroutine<void>::push_type;
 
 public:
-    coroutine_base() = default;
+    coroutine_base()          = default;
     virtual ~coroutine_base() = default;
 
-    coroutine_base(const coroutine_base&) = delete;
-    void operator=(const coroutine_base&) = delete;
+    coroutine_base(const coroutine_base &) = delete;
+    void operator=(const coroutine_base &) = delete;
 
-    coroutine_base(coroutine_base&& other) noexcept;
+    coroutine_base(coroutine_base &&other) noexcept;
 
-    coroutine_base& operator=(coroutine_base&& other) noexcept;
+    coroutine_base &operator=(coroutine_base &&other) noexcept;
 
 private:
-    void run(co_pull& source);
+    void run(co_push &source);
 
 protected:
     virtual void run() = 0;
@@ -32,41 +32,34 @@ protected:
     void resume();
 
 private:
-    co_push  sink_{ [this](co_pull& source) {run(source); } };  ///< coroutine sink
-    co_pull* source_{ nullptr };                                ///< coroutine source
+    co_pull  sink_{[this](co_push &source) { run(source); }};  ///< coroutine sink
+    co_push *source_{nullptr};                                 ///< coroutine source
 };
 
-inline coroutine_base::coroutine_base(coroutine_base&& other) noexcept
-    : sink_{std::move(other.sink_)}
-    , source_{std::exchange(other.source_, nullptr)}
+inline coroutine_base::coroutine_base(coroutine_base &&other) noexcept
+    : sink_{std::move(other.sink_)}, source_{std::exchange(other.source_, nullptr)}
 {
 }
 
-inline coroutine_base& coroutine_base::operator=(coroutine_base&& other) noexcept
+inline coroutine_base &coroutine_base::operator=(coroutine_base &&other) noexcept
 {
     if (this != &other)
     {
-        sink_ = std::move(other.sink_);
+        sink_   = std::move(other.sink_);
         source_ = std::exchange(other.source_, nullptr);
     }
 
     return *this;
 }
 
-inline void coroutine_base::run(co_pull& source)
+inline void coroutine_base::run(co_push &source)
 {
     source_ = &source;
     run();
 }
 
-inline void coroutine_base::yield() const
-{
-    (*source_)();
-}
+inline void coroutine_base::yield() const { (*source_)(); }
 
-inline void coroutine_base::resume()
-{
-    sink_();
-}
+inline void coroutine_base::resume() { sink_(); }
 
-}
+}  // namespace remote_hid

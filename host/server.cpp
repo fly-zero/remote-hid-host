@@ -25,21 +25,21 @@ inline LPFN_ACCEPTEX load_accept_ex(SOCKET sock)
     // so that we can call the AcceptEx function directly, rather
     // than refer to the Mswsock.lib library.
 
-    GUID guid_accept_ex = WSAID_ACCEPTEX;
-    LPFN_ACCEPTEX accept_ex = nullptr;
-    DWORD bytes;
+    GUID          guid_accept_ex = WSAID_ACCEPTEX;
+    LPFN_ACCEPTEX accept_ex      = nullptr;
+    DWORD         bytes;
 
-    auto const res = WSAIoctl(
-        sock,
-        SIO_GET_EXTENSION_FUNCTION_POINTER,
-        &guid_accept_ex,
-        sizeof(guid_accept_ex),
-        &accept_ex,
-        sizeof(accept_ex),
-        &bytes,
-        nullptr,
-        nullptr);
-    if (res == SOCKET_ERROR) {
+    auto const res = WSAIoctl(sock,
+                              SIO_GET_EXTENSION_FUNCTION_POINTER,
+                              &guid_accept_ex,
+                              sizeof(guid_accept_ex),
+                              &accept_ex,
+                              sizeof(accept_ex),
+                              &bytes,
+                              nullptr,
+                              nullptr);
+    if (res == SOCKET_ERROR)
+    {
         auto const err = WSAGetLastError();
         closesocket(sock);
         throw std::system_error(err, std::system_category(), "WSAIoctl failed");
@@ -54,10 +54,10 @@ struct server::init
 
     ~init();
 
-    init(const init&) = delete;
-    void operator=(const init&) = delete;
-    init(init&&) = delete;
-    void operator=(init&&) = delete;
+    init(const init &)           = delete;
+    void operator=(const init &) = delete;
+    init(init &&)                = delete;
+    void operator=(init &&)      = delete;
 
     static init s_init;
 };
@@ -69,10 +69,10 @@ std::tuple<std::string_view, std::string_view> split_string(std::string_view str
     auto const pos = str.find(delim);
     if (pos == std::string_view::npos)
     {
-        return { str, {} };
+        return {str, {}};
     }
 
-    return { str.substr(0, pos), str.substr(pos + 1) };
+    return {str.substr(0, pos), str.substr(pos + 1)};
 }
 
 server::server(event_dispatch &dispatcher, std::string_view addr)
@@ -92,10 +92,7 @@ server::server(event_dispatch &dispatcher, std::string_view addr)
     resume();
 }
 
-void server::on_io_complete(DWORD bytes_transferred)
-{
-    resume();
-}
+void server::on_io_complete(DWORD bytes_transferred) { resume(); }
 
 inline SOCKET server::listen(std::string_view addr)
 {
@@ -103,7 +100,8 @@ inline SOCKET server::listen(std::string_view addr)
     auto const sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock == INVALID_SOCKET)
     {
-        throw std::system_error(WSAGetLastError(), std::system_category(), "Failed to create socket");
+        throw std::system_error(
+            WSAGetLastError(), std::system_category(), "Failed to create socket");
     }
 
     // spit address
@@ -111,18 +109,20 @@ inline SOCKET server::listen(std::string_view addr)
     if (host.empty() || port.empty())
     {
         closesocket(sock);
-        throw exception::invalid_argument("Invalid address: '%.*s'", static_cast<int>(addr.size()), addr.data());
+        throw exception::invalid_argument(
+            "Invalid address: '%.*s'", static_cast<int>(addr.size()), addr.data());
     }
 
     // copy host to null-terminated string
-    auto const host_deleter = [](char* p) { _freea(p); };
-    std::unique_ptr<char, decltype(host_deleter)> const host_str{ static_cast<char*>(_malloca(host.size() + 1)), host_deleter };
+    auto const                                          host_deleter = [](char *p) { _freea(p); };
+    std::unique_ptr<char, decltype(host_deleter)> const host_str{
+        static_cast<char *>(_malloca(host.size() + 1)), host_deleter};
     *std::copy(host.begin(), host.end(), host_str.get()) = '\0';
 
     // setup address
     sockaddr_in tmp{};
     tmp.sin_family = AF_INET;
-    tmp.sin_port = htons(static_cast<uint16_t>(std::stoi(port.data())));
+    tmp.sin_port   = htons(static_cast<uint16_t>(std::stoi(port.data())));
     if (inet_pton(AF_INET, host_str.get(), &tmp.sin_addr) != 1)
     {
         auto const err = WSAGetLastError();
@@ -131,7 +131,7 @@ inline SOCKET server::listen(std::string_view addr)
     }
 
     // bind socket
-    if (bind(sock, reinterpret_cast<sockaddr*>(&tmp), sizeof(tmp)) == SOCKET_ERROR)
+    if (bind(sock, reinterpret_cast<sockaddr *>(&tmp), sizeof(tmp)) == SOCKET_ERROR)
     {
         auto const err = WSAGetLastError();
         closesocket(sock);
@@ -168,8 +168,8 @@ SOCKET server::accept() const
     }
 
     // accept a connection
-    char buff[1024];
-    DWORD bytes = 0;
+    char          buff[1024];
+    DWORD         bytes = 0;
     WSAOVERLAPPED listen_overlapped{};
     if (!s_accept_ex(get_socket(),
                      client_sock,
@@ -213,9 +213,6 @@ inline server::init::init()
     }
 }
 
-inline server::init::~init()
-{
-    WSACleanup();
-}
+inline server::init::~init() { WSACleanup(); }
 
-}
+}  // namespace remote_hid

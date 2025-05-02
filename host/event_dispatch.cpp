@@ -8,11 +8,13 @@ namespace remote_hid
 {
 
 event_dispatch::event_dispatch(unsigned long const thread_num)
-    : iocp_{ CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, thread_num) }
+    : iocp_{CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, thread_num)}
 {
     if (!iocp_)
     {
-        throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), "Failed to create I/O completion port");
+        throw std::system_error(static_cast<int>(GetLastError()),
+                                std::system_category(),
+                                "Failed to create I/O completion port");
     }
 
     running_ = true;
@@ -26,7 +28,7 @@ event_dispatch::~event_dispatch()
     }
 }
 
-event_dispatch& event_dispatch::operator=(event_dispatch&& other) noexcept
+event_dispatch &event_dispatch::operator=(event_dispatch &&other) noexcept
 {
     if (this != &other)
     {
@@ -50,12 +52,15 @@ void event_dispatch::run()
         // call on_loop for all loop listeners
         on_loop();
 
-        DWORD bytes_transferred{};
-        ULONG_PTR key{};
+        DWORD        bytes_transferred{};
+        ULONG_PTR    key{};
         LPOVERLAPPED overlapped;
-        if (auto const ret = GetQueuedCompletionStatus(iocp_, &bytes_transferred, &key, &overlapped, 50); ret)
+        if (auto const ret =
+                GetQueuedCompletionStatus(iocp_, &bytes_transferred, &key, &overlapped, 50);
+            ret)
         {
-            auto const listener = reinterpret_cast<io_listener*>(key);  // NOLINT(performance-no-int-to-ptr)
+            auto const listener =
+                reinterpret_cast<io_listener *>(key);  // NOLINT(performance-no-int-to-ptr)
             listener->on_io_complete(bytes_transferred);
         }
         else if (overlapped)
@@ -68,14 +73,16 @@ void event_dispatch::run()
         }
         else
         {
-            throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), "Failed to get queued completion status");
+            throw std::system_error(static_cast<int>(GetLastError()),
+                                    std::system_category(),
+                                    "Failed to get queued completion status");
         }
     }
 }
 
 inline void event_dispatch::on_loop()
 {
-    for (auto& listener : loop_listener_list_)
+    for (auto &listener : loop_listener_list_)
     {
         listener.on_loop();
     }
@@ -86,7 +93,7 @@ void event_dispatch::on_timeout(time_point_t const now)
     while (!timeout_listeners_queue_.empty())
     {
         // check if the top listener is not ready
-        auto& top = timeout_listeners_queue_.top();
+        auto &top = timeout_listeners_queue_.top();
         if (now < top.deadline_)
         {
             break;
@@ -104,4 +111,4 @@ void event_dispatch::on_timeout(time_point_t const now)
     }
 }
 
-}
+}  // namespace remote_hid

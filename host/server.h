@@ -15,24 +15,19 @@ class server final : public io_listener, public loop_listener, public coroutine_
 {
     struct init;
 
-    using connection_list = boost::intrusive::list
-                                < connection
-                                , boost::intrusive::member_hook
-                                    < connection
-                                    , connection::list_hook
-                                    , &connection::list_hook_
-                                    >
-                                >;
+    using connection_list = boost::intrusive::list<
+        connection,
+        boost::intrusive::member_hook<connection, connection::list_hook, &connection::list_hook_> >;
 
 public:
     server(event_dispatch &dispatcher, std::string_view addr);
 
     ~server() override = default;
 
-    server(server&& other) = delete;
-    void operator=(server&& other) = delete;
-    server(server const&) = delete;
-    server& operator=(server const&) = delete;
+    server(server &&other)            = delete;
+    void operator=(server &&other)    = delete;
+    server(server const &)            = delete;
+    server &operator=(server const &) = delete;
 
     event_dispatch &get_event_dispatch() const;
 

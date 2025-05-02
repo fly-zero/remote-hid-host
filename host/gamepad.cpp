@@ -5,8 +5,7 @@
 namespace remote_hid
 {
 
-gamepad::gamepad()
-    : client_(vigem_alloc())
+gamepad::gamepad() : client_(vigem_alloc())
 {
     // Allocate a ViGEm client
     if (!client_)
@@ -14,7 +13,7 @@ gamepad::gamepad()
         throw std::runtime_error("Failed to allocate ViGEm client");
     }
 
-        // Connect to the ViGEm bus
+    // Connect to the ViGEm bus
     // This is an "expensive" operation, so it should be done once per application
     auto const err = vigem_connect(client_.get());
     if (!VIGEM_SUCCESS(err))
@@ -26,7 +25,7 @@ gamepad::gamepad()
 gamepad::~gamepad()
 {
     // Remove all targets
-    for (auto const& target : targets_)
+    for (auto const &target : targets_)
     {
         vigem_target_remove(client_.get(), target.get());
     }
@@ -58,4 +57,4 @@ int gamepad::add_controller()
     return static_cast<int>(targets_.size() - 1);
 }
 
-}
+}  // namespace remote_hid

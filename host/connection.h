@@ -21,10 +21,10 @@ public:
 
     ~connection() override = default;
 
-    connection(const connection&) = delete;
-    connection(connection&& other) = delete;
-    void operator=(const connection&) = delete;
-    void operator=(connection&& other) = delete;
+    connection(const connection &)     = delete;
+    connection(connection &&other)     = delete;
+    void operator=(const connection &) = delete;
+    void operator=(connection &&other) = delete;
 
 protected:
     void on_io_complete(DWORD bytes_transferred) override;
